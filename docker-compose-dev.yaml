@@ -5,12 +5,8 @@ services:
   rustdesk-api:
     build: 
       context: .
-      dockerfile: Dockerfile.dev
-      args:
-        COUNTRY: CN
-        FRONTEND_GIT_REPO: https://github.com/Kayungko/Kustdesk-api-web.git
-        FRONTEND_GIT_BRANCH: master
-    image: kayungko/kustdesk-api:latest  # 给你的镜像打标签
+      dockerfile: Dockerfile.simple
+    image: kayung1012/kustdesk-api:latest  # 使用你的Docker Hub镜像
     container_name: rustdesk-api
     environment:
       - TZ=Asia/Shanghai
