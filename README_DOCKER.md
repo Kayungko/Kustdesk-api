@@ -46,9 +46,25 @@ kustdesk-server/
     └── src/utils/i18n/     # 国际化文件
 ```
 
+## ⚠️ 重要配置说明
+
+### RustDesk 服务端关键配置
+
+- **`MUST_LOGIN`**: 
+  - `N` (默认): 无需登录即可连接，适合内网环境
+  - `Y`: 必须登录才能连接，适合公网环境，更安全
+
+- **`ENCRYPTED_ONLY`**: 
+  - `1` (默认): 仅允许加密连接，更安全
+  - `0`: 允许非加密连接，兼容性更好但安全性较低
+
+- **`RELAY`**: 中继服务器地址，用于NAT穿透
+
 ## 🐳 Docker Compose 部署
 
-### 1. 创建 docker-compose.yml
+### 方案1：仅API服务部署（推荐新手）
+
+如果你已经有RustDesk服务端，只需要API服务：
 
 ```yaml
 version: '3.8'
@@ -60,9 +76,9 @@ services:
     environment:
       - TZ=Asia/Shanghai
       - RUSTDESK_API_LANG=zh-CN
-      - RUSTDESK_API_RUSTDESK_ID_SERVER=192.168.1.66:21116
-      - RUSTDESK_API_RUSTDESK_RELAY_SERVER=192.168.1.66:21117
-      - RUSTDESK_API_RUSTDESK_API_SERVER=http://192.168.1.66:21114
+      - RUSTDESK_API_RUSTDESK_ID_SERVER=你的ID服务器IP:21116
+      - RUSTDESK_API_RUSTDESK_RELAY_SERVER=你的中继服务器IP:21117
+      - RUSTDESK_API_RUSTDESK_API_SERVER=http://你的API服务器IP:21114
       - RUSTDESK_API_RUSTDESK_KEY=your_rustdesk_key_here
       - RUSTDESK_API_APP_WEB_CLIENT=1
       - RUSTDESK_API_APP_REGISTER=false
@@ -86,11 +102,82 @@ networks:
         - subnet: 172.20.0.0/16
 ```
 
-### 2. 启动服务
+### 方案2：完整RustDesk服务端 + API一体化部署
+
+如果你需要完整的RustDesk服务，包含ID服务器、中继服务器和API：
+
+```yaml
+version: '3.8'
+
+networks:
+  rustdesk-net:
+    external: false
+
+services:
+  # RustDesk 服务端 (ID + Relay)
+  rustdesk:
+    image: lejianwen/rustdesk-server-s6:latest
+    container_name: rustdesk-server
+    ports:
+      - "21115:21115"  # hbbs
+      - "21116:21116"  # hbbs
+      - "21116:21116/udp"  # hbbs
+      - "21117:21117"  # hbbr
+      - "21118:21118"  # hbbr
+      - "21119:21119"  # hbbr
+    environment:
+      - RELAY=你的服务器IP:21117
+      - ENCRYPTED_ONLY=1
+      - MUST_LOGIN=Y  # 默认为 N，设置为 Y 则必须登录才能连接
+      - TZ=Asia/Shanghai
+      - RUSTDESK_API_RUSTDESK_ID_SERVER=你的服务器IP:21116
+      - RUSTDESK_API_RUSTDESK_RELAY_SERVER=你的服务器IP:21117
+      - RUSTDESK_API_RUSTDESK_API_SERVER=http://你的服务器IP:21114
+      - RUSTDESK_API_KEY_FILE=/data/id_ed25519.pub
+      - RUSTDESK_API_JWT_KEY=your_jwt_secret_here
+    volumes:
+      - ./data/rustdesk/server:/data
+      - ./data/rustdesk/api:/app/data
+    networks:
+      - rustdesk-net
+    restart: unless-stopped
+
+  # RustDesk API 服务（使用你的镜像）
+  rustdesk-api:
+    image: kayung1012/kustdesk-api:latest
+    container_name: rustdesk-api
+    ports:
+      - "21114:21114"
+    environment:
+      - TZ=Asia/Shanghai
+      - RUSTDESK_API_LANG=zh-CN
+      - RUSTDESK_API_RUSTDESK_ID_SERVER=你的服务器IP:21116
+      - RUSTDESK_API_RUSTDESK_RELAY_SERVER=你的服务器IP:21117
+      - RUSTDESK_API_RUSTDESK_API_SERVER=http://你的服务器IP:21114
+      - RUSTDESK_API_RUSTDESK_KEY=your_rustdesk_key_here
+      - RUSTDESK_API_APP_WEB_CLIENT=1
+      - RUSTDESK_API_APP_REGISTER=false
+      - RUSTDESK_API_APP_SHOW_SWAGGER=0
+      - RUSTDESK_API_APP_MAX_CONCURRENT_DEVICES=3
+    volumes:
+      - ./data/rustdesk/api:/app/data
+      - ./conf:/app/conf
+      - ./logs:/app/runtime
+    networks:
+      - rustdesk-net
+    restart: unless-stopped
+    depends_on:
+      - rustdesk
+```
+
+## 🚀 启动服务
 
 ```bash
 # 启动服务
 docker-compose up -d
+
+# 查看状态
+docker-compose ps
 
 # 查看日志
 docker-compose logs -f rustdesk-api
@@ -108,12 +195,14 @@ docker-compose down
 | `RUSTDESK_API_RUSTDESK_RELAY_SERVER` | 中继服务器地址 | - | `192.168.1.66:21117` |
 | `RUSTDESK_API_APP_MAX_CONCURRENT_DEVICES` | 最大并发设备数 | `3` | `5` |
 | `RUSTDESK_API_APP_REGISTER` | 是否允许用户注册 | `false` | `true` |
+| `MUST_LOGIN` | 是否必须登录才能连接 | `N` | `Y` (必须登录), `N` (无需登录) |
+| `ENCRYPTED_ONLY` | 是否仅允许加密连接 | `1` | `1` (仅加密), `0` (允许非加密) |
 
 ## 🌐 访问地址
 
-- **管理后台**: http://localhost:21114/_admin/
-- **API 文档**: http://localhost:21114/swagger/index.html
-- **健康检查**: http://localhost:21114/health
+- **管理后台**: http://你的服务器IP:21114/_admin/
+- **API 文档**: http://你的服务器IP:21114/swagger/index.html
+- **健康检查**: http://你的服务器IP:21114/health
 
 ## 🔧 自定义构建
 
