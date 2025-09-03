@@ -2,9 +2,9 @@ package admin
 
 import (
 	"github.com/gin-gonic/gin"
-	"rustdesk-api/global"
-	"rustdesk-api/http/response"
-	"rustdesk-api/model"
+	"github.com/lejianwen/rustdesk-api/v2/global"
+	"github.com/lejianwen/rustdesk-api/v2/http/response"
+	"github.com/lejianwen/rustdesk-api/v2/model"
 	"time"
 )
 
@@ -72,7 +72,7 @@ func (sc *SystemController) GetConfig(c *gin.Context) {
 func (sc *SystemController) UpdateConfig(c *gin.Context) {
 	var req SystemConfig
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.ValidateFail(c, err.Error())
+		response.Fail(c, 400, err.Error())
 		return
 	}
 	

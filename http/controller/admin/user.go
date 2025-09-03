@@ -362,16 +362,12 @@ func (ct *User) GetUserDevices(c *gin.Context) {
 	userId := c.Param("id")
 	userIdUint, err := strconv.ParseUint(userId, 10, 32)
 	if err != nil {
-		response.ValidateFail(c, "Invalid user ID")
+		response.Fail(c, 400, "Invalid user ID")
 		return
 	}
 	
 	// 获取用户设备列表
-	devices, err := service.AllService.UserService.GetUserActiveDevices(uint(userIdUint))
-	if err != nil {
-		response.Fail(c, 500, "Failed to get user devices")
-		return
-	}
+	devices := service.AllService.UserService.GetUserActiveDevices(uint(userIdUint))
 	
 	// 获取用户设备数量限制
 	deviceLimit, isPersonal := service.AllService.UserService.GetUserDeviceLimit(uint(userIdUint))
