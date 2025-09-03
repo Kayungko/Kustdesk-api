@@ -1,24 +1,71 @@
+version: '3.8'
+
 services:
+  # RustDesk API Server (使用你的自定义版本)
   rustdesk-api:
     build: 
       context: .
       dockerfile: Dockerfile.dev
       args:
         COUNTRY: CN
-        FRONTEND_GIT_REPO: https://github.com/lejianwen/rustdesk-api-web.git
+        FRONTEND_GIT_REPO: https://github.com/Kayungko/Kustdesk-api-web.git
         FRONTEND_GIT_BRANCH: master
-    # image: lejianwen/rustdesk-api
+    image: kayungko/kustdesk-api:latest  # 给你的镜像打标签
     container_name: rustdesk-api
     environment:
       - TZ=Asia/Shanghai
+      - RUSTDESK_API_LANG=zh-CN
       - RUSTDESK_API_RUSTDESK_ID_SERVER=192.168.1.66:21116
       - RUSTDESK_API_RUSTDESK_RELAY_SERVER=192.168.1.66:21117
-      - RUSTDESK_API_RUSTDESK_API_SERVER=http://127.0.0.1:21114
-      - RUSTDESK_API_RUSTDESK_KEY=123456789
+      - RUSTDESK_API_RUSTDESK_API_SERVER=http://192.168.1.66:21114
+      - RUSTDESK_API_RUSTDESK_KEY=your_rustdesk_key_here
+      - RUSTDESK_API_APP_WEB_CLIENT=1
+      - RUSTDESK_API_APP_REGISTER=false
+      - RUSTDESK_API_APP_SHOW_SWAGGER=0
+      # 你的自定义配置
+      - RUSTDESK_API_APP_MAX_CONCURRENT_DEVICES=3
     ports:
-      - 21114:21114
+      - "21114:21114"
     volumes:
-      - ./data/rustdesk/api:/app/data #将数据库挂载出来方便备份
-      - ./conf:/app/conf # config
-      # - ./resources:/app/resources # 静态资源
+      - ./data/rustdesk/api:/app/data
+      - ./conf:/app/conf
+      - ./logs:/app/runtime
     restart: unless-stopped
+    networks:
+      - rustdesk-net
+
+  # RustDesk Server (ID + Relay) - 可选
+  # 如果你需要完整的RustDesk服务器，取消注释下面的服务
+  # rustdesk-server:
+  #   image: lejianwen/rustdesk-server-s6:latest
+  #   container_name: rustdesk-server
+  #   environment:
+  #     - RELAY=192.168.1.66:21117
+  #     - ENCRYPTED_ONLY=1
+  #     - MUST_LOGIN=Y
+  #     - TZ=Asia/Shanghai
+  #     - RUSTDESK_API_RUSTDESK_ID_SERVER=192.168.1.66:21116
+  #     - RUSTDESK_API_RUSTDESK_RELAY_SERVER=192.168.1.66:21117
+  #     - RUSTDESK_API_RUSTDESK_API_SERVER=http://192.168.1.66:21114
+  #     - RUSTDESK_API_KEY_FILE=/data/id_ed25519.pub
+  #     - RUSTDESK_API_JWT_KEY=your_jwt_secret_here
+  #   ports:
+  #     - "21115:21115"
+  #     - "21116:21116"
+  #     - "21116:21116/udp"
+  #     - "21117:21117"
+  #     - "21118:21118"
+  #     - "21119:21119"
+  #   volumes:
+  #     - ./data/rustdesk/server:/data
+  #     - ./data/rustdesk/api:/app/data
+  #   restart: unless-stopped
+  #   networks:
+  #     - rustdesk-net
+
+networks:
+  rustdesk-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
