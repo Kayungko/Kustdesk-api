@@ -529,3 +529,98 @@ func (us *UserService) IsUsernameExistsLocal(username string) bool {
 func (us *UserService) IsEmailExistsLdap(email string) bool {
 	return AllService.LdapService.IsEmailExists(email)
 }
+
+// 检查用户是否可以登录新设备
+func (us *UserService) CanLoginNewDevice(userId uint) bool {
+	// 首先获取用户信息，检查是否有个人设备数量限制
+	user := &model.User{}
+	if err := DB.First(user, userId).Error; err != nil {
+		return false
+	}
+	
+	// 如果用户有个人设备数量限制，使用个人限制
+	if user.MaxDevices != nil && *user.MaxDevices > 0 {
+		currentDevices := us.GetUserActiveDeviceCount(userId)
+		return currentDevices < int64(*user.MaxDevices)
+	}
+	
+	// 否则使用全局配置
+	maxDevices := Config.App.MaxConcurrentDevices
+	if maxDevices <= 0 {
+		return true // 无限制
+	}
+	
+	currentDevices := us.GetUserActiveDeviceCount(userId)
+	return currentDevices < int64(maxDevices)
+}
+
+// 获取用户当前活跃设备数量
+func (us *UserService) GetUserActiveDeviceCount(userId uint) int64 {
+	var count int64
+	DB.Model(&model.UserToken{}).
+		Where("user_id = ? AND expired_at > ?", userId, time.Now().Unix()).
+		Count(&count)
+	return count
+}
+
+// 获取用户设备数量限制
+func (us *UserService) GetUserDeviceLimit(userId uint) (int, bool) {
+	user := &model.User{}
+	if err := DB.First(user, userId).Error; err != nil {
+		return 0, false
+	}
+	
+	// 如果用户有个人设备数量限制，返回个人限制
+	if user.MaxDevices != nil && *user.MaxDevices > 0 {
+		return *user.MaxDevices, true
+	}
+	
+	// 否则返回全局配置
+	return Config.App.MaxConcurrentDevices, false
+}
+
+// 获取用户当前活跃设备列表
+func (us *UserService) GetUserActiveDevices(userId uint) []*model.UserToken {
+	var tokens []*model.UserToken
+	DB.Where("user_id = ? AND expired_at > ?", userId, time.Now().Unix()).
+		Order("last_active_at desc").
+		Find(&tokens)
+	return tokens
+}
+
+// 强制下线指定设备
+func (us *UserService) ForceLogoutDevice(userId uint, tokenId uint) error {
+	return DB.Where("user_id = ? AND id = ?", userId, tokenId).
+		Delete(&model.UserToken{}).Error
+}
+
+// 强制下线其他设备（可选功能）
+func (us *UserService) ForceLogoutOtherDevices(userId uint, currentTokenId uint) error {
+	return DB.Where("user_id = ? AND id != ?", userId, currentTokenId).
+		Delete(&model.UserToken{}).Error
+}
+
+// 检查账户是否在有效时间段内
+func (us *UserService) IsAccountActive(u *model.User) bool {
+	now := time.Now()
+	
+	// 检查开始时间
+	if u.AccountStartTime != nil && now.Before(*u.AccountStartTime) {
+		return false
+	}
+	
+	// 检查结束时间
+	if u.AccountEndTime != nil && now.After(*u.AccountEndTime) {
+		return false
+	}
+	
+	return true
+}
+
+// 更新设备最后活跃时间
+func (us *UserService) UpdateDeviceLastActive(tokenId uint) error {
+	return DB.Model(&model.UserToken{}).
+		Where("id = ?", tokenId).
+		Update("last_active_at", time.Now().Unix()).
+		Error
+}

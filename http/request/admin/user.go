@@ -2,6 +2,7 @@ package admin
 
 import (
 	"github.com/lejianwen/rustdesk-api/v2/model"
+	"time"
 )
 
 type UserForm struct {
@@ -15,6 +16,13 @@ type UserForm struct {
 	IsAdmin  *bool            `json:"is_admin" `
 	Status   model.StatusCode `json:"status" validate:"required,gte=0"`
 	Remark   string           `json:"remark"`
+	
+	// 新增字段
+	AccountStartTime *time.Time `json:"account_start_time"`
+	AccountEndTime   *time.Time `json:"account_end_time"`
+	
+	// 新增字段：个人设备数量限制
+	MaxDevices *int `json:"max_devices"`
 }
 
 func (uf *UserForm) FromUser(user *model.User) *UserForm {
@@ -27,6 +35,9 @@ func (uf *UserForm) FromUser(user *model.User) *UserForm {
 	uf.IsAdmin = user.IsAdmin
 	uf.Status = user.Status
 	uf.Remark = user.Remark
+	uf.AccountStartTime = user.AccountStartTime
+	uf.AccountEndTime = user.AccountEndTime
+	uf.MaxDevices = user.MaxDevices
 	return uf
 }
 func (uf *UserForm) ToUser() *model.User {
@@ -40,6 +51,9 @@ func (uf *UserForm) ToUser() *model.User {
 	user.IsAdmin = uf.IsAdmin
 	user.Status = uf.Status
 	user.Remark = uf.Remark
+	user.AccountStartTime = uf.AccountStartTime
+	user.AccountEndTime = uf.AccountEndTime
+	user.MaxDevices = uf.MaxDevices
 	return user
 }
 
@@ -75,4 +89,9 @@ type RegisterForm struct {
 
 type UserTokenBatchDeleteForm struct {
 	Ids []uint `json:"ids" validate:"required"`
+}
+
+type ForceLogoutDeviceForm struct {
+	UserId  uint `json:"user_id" validate:"required"`
+	TokenId uint `json:"token_id" validate:"required"`
 }

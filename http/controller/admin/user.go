@@ -346,3 +346,73 @@ func (ct *User) Register(c *gin.Context) {
 	})
 	responseLoginSuccess(c, u, ut.Token)
 }
+
+// GetUserDevices 获取用户当前登录的所有设备
+// @Tags 用户
+// @Summary 获取用户设备列表
+// @Description 获取用户当前登录的所有设备信息
+// @Accept  json
+// @Produce  json
+// @Param id path int true "用户ID"
+// @Success 200 {object} response.Response{data=[]model.UserToken}
+// @Failure 500 {object} response.Response
+// @Router /admin/user/devices/{id} [get]
+// @Security token
+func (ct *User) GetUserDevices(c *gin.Context) {
+	userId := c.Param("id")
+	userIdUint, err := strconv.ParseUint(userId, 10, 32)
+	if err != nil {
+		response.ValidateFail(c, "Invalid user ID")
+		return
+	}
+	
+	// 获取用户设备列表
+	devices, err := service.AllService.UserService.GetUserActiveDevices(uint(userIdUint))
+	if err != nil {
+		response.Fail(c, 500, "Failed to get user devices")
+		return
+	}
+	
+	// 获取用户设备数量限制
+	deviceLimit, isPersonal := service.AllService.UserService.GetUserDeviceLimit(uint(userIdUint))
+	
+	// 构建响应数据
+	responseData := gin.H{
+		"devices": devices,
+		"device_limit": gin.H{
+			"limit": deviceLimit,
+			"is_personal": isPersonal,
+			"current_count": len(devices),
+			"available_slots": deviceLimit - len(devices),
+		},
+	}
+	
+	response.Success(c, responseData)
+}
+
+// ForceLogoutDevice 强制下线指定设备
+// @Tags 用户
+// @Summary 强制下线设备
+// @Description 强制下线用户指定的登录设备
+// @Accept  json
+// @Produce  json
+// @Param body body admin.ForceLogoutDeviceForm true "设备下线信息"
+// @Success 200 {object} response.Response
+// @Failure 500 {object} response.Response
+// @Router /admin/user/forceLogoutDevice [post]
+// @Security token
+func (ct *User) ForceLogoutDevice(c *gin.Context) {
+	f := &admin.ForceLogoutDeviceForm{}
+	if err := c.ShouldBindJSON(f); err != nil {
+		response.Fail(c, 101, response.TranslateMsg(c, "ParamsError")+err.Error())
+		return
+	}
+	
+	err := service.AllService.UserService.ForceLogoutDevice(f.UserId, f.TokenId)
+	if err != nil {
+		response.Fail(c, 101, err.Error())
+		return
+	}
+	
+	response.Success(c, nil)
+}

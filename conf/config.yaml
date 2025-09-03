@@ -9,6 +9,9 @@ app:
   token-expire: 168h
   web-sso: true #web auth sso
   disable-pwd-login: false #禁用密码登录
+  
+  # 新增配置
+  max-concurrent-devices: 3  # 同一用户最大同时登录设备数
 
 admin:
   title: "RustDesk API Admin"

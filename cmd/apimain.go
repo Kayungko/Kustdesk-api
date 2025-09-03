@@ -23,7 +23,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const DatabaseVersion = 265
+const DatabaseVersion = 266
 
 // @title 管理系统API
 // @version 1.0
@@ -281,6 +281,34 @@ func DatabaseAutoUpdate() {
 		}
 		if v.Version < 246 {
 			db.Exec("update oauths set issuer = 'https://accounts.google.com' where op = 'google' and issuer is null")
+		}
+		
+		// 266版本迁移：添加用户时间段和设备信息字段
+		if v.Version < 266 {
+			// 添加用户时间段字段
+			if !db.Migrator().HasColumn(&model.User{}, "account_start_time") {
+				db.Exec("ALTER TABLE users ADD COLUMN account_start_time DATETIME NULL")
+			}
+			if !db.Migrator().HasColumn(&model.User{}, "account_end_time") {
+				db.Exec("ALTER TABLE users ADD COLUMN account_end_time DATETIME NULL")
+			}
+			
+			// 添加用户Token设备信息字段
+			if !db.Migrator().HasColumn(&model.UserToken{}, "device_name") {
+				db.Exec("ALTER TABLE user_tokens ADD COLUMN device_name VARCHAR(255) DEFAULT ''")
+			}
+			if !db.Migrator().HasColumn(&model.UserToken{}, "device_type") {
+				db.Exec("ALTER TABLE user_tokens ADD COLUMN device_type VARCHAR(50) DEFAULT ''")
+			}
+			if !db.Migrator().HasColumn(&model.UserToken{}, "device_os") {
+				db.Exec("ALTER TABLE user_tokens ADD COLUMN device_os VARCHAR(100) DEFAULT ''")
+			}
+			if !db.Migrator().HasColumn(&model.UserToken{}, "device_ip") {
+				db.Exec("ALTER TABLE user_tokens ADD COLUMN device_ip VARCHAR(45) DEFAULT ''")
+			}
+			if !db.Migrator().HasColumn(&model.UserToken{}, "last_active_at") {
+				db.Exec("ALTER TABLE user_tokens ADD COLUMN last_active_at BIGINT DEFAULT 0")
+			}
 		}
 	}
 

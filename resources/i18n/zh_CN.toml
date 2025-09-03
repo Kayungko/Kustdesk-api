@@ -160,3 +160,29 @@ other = "已被封禁。"
 description = "Register success, wait for admin confirm."
 one = "注册成功，请等待管理员审核。"
 other = "注册成功，请等待管理员审核。"
+
+# 新增：账户时间段和多端登录相关消息
+[AccountNotActive]
+description = "Account is not active in current time period."
+one = "账户在当前时间段内不可用。"
+other = "账户在当前时间段内不可用。"
+
+[MaxDevicesReached]
+description = "Maximum number of concurrent devices reached."
+one = "已达到最大同时登录设备数量限制。"
+other = "已达到最大同时登录设备数量限制。"
+
+[DeviceLogoutSuccess]
+description = "Device logout successful."
+one = "设备下线成功。"
+other = "设备下线成功。"
+
+[DeviceLogoutFailed]
+description = "Device logout failed."
+one = "设备下线失败。"
+other = "设备下线失败。"
+
+[UserDevicesList]
+description = "User devices list."
+one = "用户设备列表。"
+other = "用户设备列表。"

@@ -23,6 +23,9 @@ type App struct {
 	DisablePwdLogin  bool          `mapstructure:"disable-pwd-login"`
 	CaptchaThreshold int           `mapstructure:"captcha-threshold"`
 	BanThreshold     int           `mapstructure:"ban-threshold"`
+	
+	// 新增配置：多端登录限制
+	MaxConcurrentDevices int `mapstructure:"max-concurrent-devices"` // 同一用户最大同时登录设备数
 }
 type Admin struct {
 	Title           string `mapstructure:"title"`

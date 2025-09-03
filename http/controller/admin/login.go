@@ -77,6 +77,18 @@ func (ct *Login) Login(c *gin.Context) {
 		return
 	}
 
+	// 新增：检查账户是否在有效时间段内
+	if !service.AllService.UserService.IsAccountActive(u) {
+		response.Fail(c, 101, response.TranslateMsg(c, "AccountNotActive"))
+		return
+	}
+
+	// 新增：检查多端登录限制
+	if !service.AllService.UserService.CanLoginNewDevice(u.Id) {
+		response.Fail(c, 101, response.TranslateMsg(c, "MaxDevicesReached"))
+		return
+	}
+
 	if !service.AllService.UserService.CheckUserEnable(u) {
 		if needCaptcha {
 			response.Fail(c, 110, response.TranslateMsg(c, "UserDisabled"))

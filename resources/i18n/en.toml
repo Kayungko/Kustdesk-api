@@ -158,3 +158,29 @@ other = "Banned."
 description = "Register success, wait admin confirm."
 one = "Register success, wait admin confirm."
 other = "Register success, wait admin confirm."
+
+# 新增：账户时间段和多端登录相关消息
+[AccountNotActive]
+description = "Account is not active in current time period."
+one = "Account is not active in current time period."
+other = "Account is not active in current time period."
+
+[MaxDevicesReached]
+description = "Maximum number of concurrent devices reached."
+one = "Maximum number of concurrent devices reached."
+other = "Maximum number of concurrent devices reached."
+
+[DeviceLogoutSuccess]
+description = "Device logout successful."
+one = "Device logout successful."
+other = "Device logout successful."
+
+[DeviceLogoutFailed]
+description = "Device logout failed."
+one = "Device logout failed."
+other = "Device logout failed."
+
+[UserDevicesList]
+description = "User devices list."
+one = "User devices list."
+other = "User devices list."

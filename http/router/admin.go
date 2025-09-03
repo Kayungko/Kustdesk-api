@@ -50,6 +50,7 @@ func Init(g *gin.Engine) {
 
 	RustdeskCmdBind(adg)
 	DeviceGroupBind(adg)
+	SystemBind(adg)  // 新增：系统配置路由
 	//访问静态文件
 	//g.StaticFS("/upload", http.Dir(global.Config.Gin.ResourcesPath+"/upload"))
 }
@@ -91,6 +92,10 @@ func UserBind(rg *gin.RouterGroup) {
 		aRP.POST("/update", cont.Update)
 		aRP.POST("/delete", cont.Delete)
 		aRP.POST("/changePwd", cont.UpdatePassword)
+		
+		// 新增：设备管理相关路由
+		aRP.GET("/devices/:id", cont.GetUserDevices)      // 获取用户设备列表
+		aRP.POST("/forceLogoutDevice", cont.ForceLogoutDevice) // 强制下线设备
 	}
 }
 
@@ -321,4 +326,17 @@ func ShareRecordBind(rg *gin.RouterGroup) {
 		aR.POST("/batchDelete", cont.BatchDelete)
 	}
 
+}
+
+// SystemBind 系统配置路由绑定
+func SystemBind(rg *gin.RouterGroup) {
+	aR := rg.Group("/system").Use(middleware.AdminPrivilege())
+	{
+		cont := &admin.SystemController{}
+		aR.GET("/config", cont.GetConfig)
+		aR.PUT("/config", cont.UpdateConfig)
+		aR.GET("/status", cont.GetStatus)
+		aR.GET("/statistics/users", cont.GetUserStatistics)
+		aR.GET("/statistics/devices", cont.GetDeviceStatistics)
+	}
 }

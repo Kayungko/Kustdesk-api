@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type User struct {
 	IdModel
 	Username string `json:"username" gorm:"default:'';not null;uniqueIndex"`
@@ -12,6 +14,14 @@ type User struct {
 	IsAdmin  *bool      `json:"is_admin" gorm:"default:0;not null;"`
 	Status   StatusCode `json:"status" gorm:"default:1;not null;"`
 	Remark   string     `json:"remark" gorm:"default:'';not null;"`
+	
+	// 新增字段：账户生效时间段
+	AccountStartTime *time.Time `json:"account_start_time" gorm:"default:null"` // 账户生效开始时间
+	AccountEndTime   *time.Time `json:"account_end_time" gorm:"default:null"`   // 账户生效结束时间
+	
+	// 新增字段：个人设备数量限制
+	MaxDevices *int `json:"max_devices" gorm:"default:null"` // 个人最大设备数量，null表示使用全局配置
+	
 	TimeModel
 }
 
