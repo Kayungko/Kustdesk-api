@@ -1,7 +1,15 @@
-# RustDesk API
+# KustDesk API
 
 [English Doc](README_EN.md)
 
+
+## 🚀 主要改进
+
+- ✅ **增强的中文本地化支持** - 完善的中文界面和提示信息
+- ✅ **优化的用户管理** - 支持账户有效期和设备数量限制
+- ✅ **改进的系统配置** - 更直观的管理界面
+- ✅ **Docker 容器化部署** - 简单快速部署
+- ✅ **修复了多个Bug** - 提升系统稳定性
 本项目使用 Go 实现了 RustDesk 的 API，并包含了 Web Admin 和 Web 客户端。
 
 
@@ -59,6 +67,31 @@
     - 重置管理员密码
 
 ## 功能
+
+## 🐳 Docker 快速部署
+
+### 使用预构建镜像（推荐）
+```bash
+# 拉取镜像
+docker pull kayung1012/kustdesk-api:latest
+
+# 使用 docker-compose 部署
+git clone https://github.com/Kayungko/kustdesk-server.git
+cd kustdesk-server/Kustdesk-api
+docker-compose up -d
+```
+
+### 本地构建
+```bash
+# 克隆项目
+git clone https://github.com/Kayungko/kustdesk-server.git
+cd kustdesk-server/Kustdesk-api
+
+# 构建镜像
+docker build -f Dockerfile.simple -t kustdesk-api:latest .
+```
+
+详细部署说明请参考 [README_DOCKER.md](README_DOCKER.md)
 
 
 ### API 服务 
