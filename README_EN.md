@@ -1,7 +1,15 @@
-# RustDesk API
+# KustDesk API
 
 This project implements the RustDesk API using Go, and includes both a web UI and web client. RustDesk is a remote
 desktop software that provides self-hosted solutions.
+
+## 🚀 Key Improvements
+
+- ✅ **Enhanced Chinese Localization** - Complete Chinese interface and prompt information
+- ✅ **Optimized User Management** - Support for account validity period and device quantity limits
+- ✅ **Improved System Configuration** - More intuitive management interface
+- ✅ **Docker Containerization** - Simple and fast deployment
+- ✅ **Multiple Bug Fixes** - Enhanced system stability
 
 <div align=center>
 <img src="https://img.shields.io/badge/golang-1.22-blue"/>
@@ -56,6 +64,31 @@ desktop software that provides self-hosted solutions.
 
 ## Overview
 
+## 🐳 Docker Quick Deployment
+
+### Using Pre-built Image (Recommended)
+```bash
+# Pull image
+docker pull kayung1012/kustdesk-api:latest
+
+# Deploy with docker-compose
+git clone https://github.com/Kayungko/kustdesk-server.git
+cd kustdesk-server/Kustdesk-api
+docker-compose up -d
+```
+
+### Local Build
+```bash
+# Clone project
+git clone https://github.com/Kayungko/kustdesk-server.git
+cd kustdesk-server/Kustdesk-api
+
+# Build image
+docker build -f Dockerfile.simple -t kustdesk-api:latest .
+```
+
+For detailed deployment instructions, please refer to [README_DOCKER.md](README_DOCKER.md)
+
 ### API Service
 Basic implementation of the PC client's primary interfaces.Supports the Personal version api, which can be enabled by configuring the `rustdesk.personal` file or the `RUSTDESK_API_RUSTDESK_PERSONAL` environment variable.
 
@@ -79,7 +112,7 @@ Basic implementation of the PC client's primary interfaces.Supports the Personal
 ### Web Admin
 
 * The frontend and backend are separated to provide a user-friendly management interface, primarily for managing and
-displaying data.Frontend code is available at [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)
+displaying data.Frontend code is available at [kustdesk-api-web](https://github.com/Kayungko/kustdesk-server)
 
 * Admin panel URL: `http://<your server[:port]>/_admin/`
 * For the initial installation, the admin username is `admin`, and the password will be printed in the console. You can change the password via the [command line](#CLI).
@@ -244,7 +277,7 @@ Download the release from [release](https://github.com/lejianwen/rustdesk-api/re
     ```
 
 3. Build the admin front-end (the front-end code is
-   in [rustdesk-api-web](https://github.com/lejianwen/rustdesk-api-web)):
+   in [kustdesk-api-web](https://github.com/Kayungko/kustdesk-server)):
    ```bash
    cd resources
    mkdir -p admin
