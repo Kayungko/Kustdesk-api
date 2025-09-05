@@ -11,9 +11,9 @@ services:
     environment:
       - TZ=Asia/Shanghai
       - RUSTDESK_API_LANG=zh-CN
-      - RUSTDESK_API_RUSTDESK_ID_SERVER=192.168.1.66:21116
-      - RUSTDESK_API_RUSTDESK_RELAY_SERVER=192.168.1.66:21117
-      - RUSTDESK_API_RUSTDESK_API_SERVER=http://192.168.1.66:21114
+      - RUSTDESK_API_RUSTDESK_ID_SERVER=192.168.1.66:8016
+      - RUSTDESK_API_RUSTDESK_RELAY_SERVER=192.168.1.66:8017
+      - RUSTDESK_API_RUSTDESK_API_SERVER=http://192.168.1.66:8014
       - RUSTDESK_API_RUSTDESK_KEY=your_rustdesk_key_here
       - RUSTDESK_API_APP_WEB_CLIENT=1
       - RUSTDESK_API_APP_REGISTER=false
@@ -21,7 +21,7 @@ services:
       # 你的自定义配置
       - RUSTDESK_API_APP_MAX_CONCURRENT_DEVICES=3
     ports:
-      - "21114:21114"
+      - "8014:21114"      # API服务 (映射到8014)
     volumes:
       - ./data/rustdesk/api:/app/data
       - ./conf:/app/conf
