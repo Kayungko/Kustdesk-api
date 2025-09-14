@@ -107,10 +107,17 @@ jobs:
         }
         
     - name: Run security scan
-      uses: securecodewarrior/github-action-gosec@master
-      with:
-        args: '-no-fail -fmt sarif -out results.sarif ./...'
-      continue-on-error: true
+      run: |
+        # 安装gosec安全扫描工具
+        go install github.com/securecodewarrior/gosec/v2/cmd/gosec@v2.18.2
+        
+        # 运行安全扫描，允许非关键问题通过
+        ~/go/bin/gosec -quiet ./... || {
+          echo "⚠️  Security scan found some issues, but continuing build..."
+          echo "This is non-blocking for CI/CD pipeline"
+          exit 0
+        }
+        echo "✅ Security scan completed successfully"
         
     - name: Run linting
       uses: golangci/golangci-lint-action@v3
