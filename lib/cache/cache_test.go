@@ -3,9 +3,25 @@ package cache
 import (
 	"fmt"
 	"github.com/go-redis/redis/v8"
+	"os"
 	"reflect"
 	"testing"
 )
+
+// getRedisAddr 获取Redis地址，支持环境变量配置
+func getRedisAddr() string {
+	host := os.Getenv("REDIS_HOST")
+	port := os.Getenv("REDIS_PORT")
+	
+	if host == "" {
+		host = "localhost"
+	}
+	if port == "" {
+		port = "6379"
+	}
+	
+	return host + ":" + port
+}
 
 func TestSimpleCache(t *testing.T) {
 
@@ -62,7 +78,7 @@ func TestFileCacheGet(t *testing.T) {
 
 func TestRedisCacheSet(t *testing.T) {
 	rc := NewRedis(&redis.Options{
-		Addr:     "192.168.1.168:6379",
+		Addr:     getRedisAddr(),
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
@@ -75,7 +91,7 @@ func TestRedisCacheSet(t *testing.T) {
 
 func TestRedisCacheGet(t *testing.T) {
 	rc := NewRedis(&redis.Options{
-		Addr:     "192.168.1.168:6379",
+		Addr:     getRedisAddr(),
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
