@@ -1,0 +1,74 @@
+# 多架构 Go API 构建 Dockerfile
+# syntax=docker/dockerfile:1.7
+
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+
+# 构建阶段
+FROM --platform=${BUILDPLATFORM} golang:1.23-alpine AS builder
+
+# 设置工作目录
+WORKDIR /app
+
+# 设置代理和环境变量
+ENV GOPROXY=https://goproxy.cn,direct
+ENV CGO_ENABLED=0
+
+# 安装必要的工具
+RUN apk add --no-cache git ca-certificates tzdata
+
+# 复制 go mod 文件
+COPY go.mod go.sum ./
+
+# 下载依赖
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go mod download
+
+# 复制源代码
+COPY . .
+
+# 根据目标架构设置编译参数
+ARG TARGETPLATFORM
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    case "${TARGETPLATFORM}" in \
+        "linux/amd64")   export GOARCH=amd64 ;; \
+        "linux/arm64")   export GOARCH=arm64 ;; \
+        "linux/arm/v7")  export GOARCH=arm GOARM=7 ;; \
+        *)               export GOARCH=amd64 ;; \
+    esac && \
+    export GOOS=linux && \
+    go build -ldflags="-s -w" -o apimain ./cmd/apimain.go
+
+# 最终镜像
+FROM --platform=${TARGETPLATFORM} alpine:3.20
+
+# 安装运行时依赖
+RUN apk add --no-cache tzdata ca-certificates && \
+    adduser -D -s /bin/sh rustdesk
+
+# 设置工作目录
+WORKDIR /app
+
+# 复制二进制文件
+COPY --from=builder /app/apimain .
+COPY --from=builder /app/resources ./resources
+COPY --from=builder /app/conf ./conf
+
+# 创建数据目录
+RUN mkdir -p /app/data /app/runtime && \
+    chown -R rustdesk:rustdesk /app
+
+# 切换到非root用户
+USER rustdesk
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:21114/api/health || exit 1
+
+# 暴露端口
+EXPOSE 21114
+
+# 启动命令
+CMD ["./apimain"]
