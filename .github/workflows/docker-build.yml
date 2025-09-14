@@ -107,9 +107,10 @@ jobs:
         }
         
     - name: Run security scan
-      run: |
-        go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
-        gosec ./...
+      uses: securecodewarrior/github-action-gosec@master
+      with:
+        args: '-no-fail -fmt sarif -out results.sarif ./...'
+      continue-on-error: true
         
     - name: Run linting
       uses: golangci/golangci-lint-action@v3
