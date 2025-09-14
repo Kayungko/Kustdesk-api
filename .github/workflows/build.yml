@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       BASE_IMAGE_NAMESPACE:
-        description: 'Base image namespace (Default: Your Github username)'
+        description: 'Base image namespace (Default: Your Docker Hub username)'
         required: false
-        default: ''
+        default: 'kayung1012'
       DOCKERHUB_IMAGE_NAMESPACE:
-        description: 'Docker Hub image namespace (Default: Your Github username)'
+        description: 'Docker Hub image namespace (Default: Your Docker Hub username)'
         required: false
-        default: ''
+        default: 'kayung1012'
       GHCR_IMAGE_NAMESPACE:
         description: 'GitHub Container Registry image namespace (Default: Your Github username)'
         required: false
@@ -20,9 +20,9 @@ on:
         required: false
         default: 'false'
       SKIP_GHCR:
-        description: 'Set to true to skip pushing to GHCR (default: false)'
+        description: 'Set to true to skip pushing to GHCR (default: true)'
         required: false
-        default: 'false'
+        default: 'true'
       WEBCLIENT_SOURCE_LOCATION:
         description: 'Web Client API Repository'
         required: true
@@ -31,15 +31,19 @@ on:
     tags:
       - 'v*.*.*'  # 当推送带有版本号的 tag（例如 v1.0.0）时触发工作流
       - 'test*'
+    branches:
+      - 'main'
+      - 'master'
 
 env:
   LATEST_TAG: latest
   WEBCLIENT_SOURCE_LOCATION: ${{ github.event.inputs.WEBCLIENT_SOURCE_LOCATION || 'https://github.com/Kayungko/Kustdesk-api-web' }}
-  BASE_IMAGE_NAMESPACE: ${{ github.event.inputs.BASE_IMAGE_NAMESPACE || github.actor }}
-  DOCKERHUB_IMAGE_NAMESPACE: ${{ github.event.inputs.DOCKERHUB_IMAGE_NAMESPACE || github.actor }}
+  BASE_IMAGE_NAMESPACE: ${{ github.event.inputs.BASE_IMAGE_NAMESPACE || 'kayung1012' }}
+  DOCKERHUB_IMAGE_NAMESPACE: ${{ github.event.inputs.DOCKERHUB_IMAGE_NAMESPACE || 'kayung1012' }}
   GHCR_IMAGE_NAMESPACE: ${{ github.event.inputs.GHCR_IMAGE_NAMESPACE || github.actor }}
   SKIP_DOCKER_HUB: ${{ github.event.inputs.SKIP_DOCKER_HUB || 'false' }}
-  SKIP_GHCR: ${{ github.event.inputs.SKIP_GHCR || 'false' }}
+  SKIP_GHCR: ${{ github.event.inputs.SKIP_GHCR || 'true' }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -57,7 +61,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/checkout@v4
+          
+      - name: Checkout Web Client
+        uses: actions/checkout@v4
         with:
           repository: Kayungko/Kustdesk-api-web
           path: rustdesk-api-web
@@ -69,7 +75,7 @@ jobs:
           go-version: '1.23'  # 选择 Go 版本
 
       - name: Set up npm
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
 
@@ -139,6 +145,7 @@ jobs:
             ${{ matrix.job.goos}}-${{ matrix.job.platform }}.${{matrix.job.file_ext}}
 
       - name: Upload to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: |
@@ -146,16 +153,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate Changelog
-        if: startsWith(github.ref, 'refs/tags/') && github.event_name == 'push'
-        run: npx changelogithub # or changelogithub@0.12 if ensure the stable result
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-
   deb-package:
     name: debian package - ${{ matrix.job.platform }}
     needs: build
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
     strategy:
       fail-fast: false
       matrix:
@@ -166,10 +168,10 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - name: Create packaging env
         run: |
@@ -241,21 +243,21 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
         if: ${{ env.SKIP_DOCKER_HUB == 'false' }}  # Only log in if SKIP_DOCKER_HUB is false
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+          password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Log in to GitHub Container Registry
         if: ${{ env.SKIP_GHCR == 'false' }}  # Only log in if GHCR push is enabled
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -272,9 +274,9 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
-          images: ${{ env.BASE_IMAGE_NAMESPACE }}/rustdesk-api
+          images: ${{ env.BASE_IMAGE_NAMESPACE }}/kustdesk-api
 
       - name: Download binaries
         uses: actions/download-artifact@v4
@@ -299,8 +301,8 @@ jobs:
           build-args: |
             BUILDARCH=${{ matrix.job.platform }}
           tags: |
-            ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/rustdesk-api:${{ env.LATEST_TAG }}-${{ matrix.job.platform }},
-            ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/rustdesk-api:${{ env.TAG }}-${{ matrix.job.platform }}
+            ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/kustdesk-api:${{ env.LATEST_TAG }}-${{ matrix.job.platform }}
+            ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/kustdesk-api:${{ env.TAG }}-${{ matrix.job.platform }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Build and push Docker Full S6 image to Docker Hub ${{ matrix.job.platform }}
@@ -315,7 +317,7 @@ jobs:
           build-args: |
             BUILDARCH=${{ matrix.job.platform }}
           tags: |
-            ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/rustdesk-api:full-s6-${{ matrix.job.platform }}
+            ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/kustdesk-api:full-s6-${{ matrix.job.platform }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Build and push Docker image to GHCR ${{ matrix.job.platform }}
@@ -330,8 +332,8 @@ jobs:
           build-args: |
             BUILDARCH=${{ matrix.job.platform }}
           tags: |
-            ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/rustdesk-api:${{ env.LATEST_TAG }}-${{ matrix.job.platform }},
-            ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/rustdesk-api:${{ env.TAG }}-${{ matrix.job.platform }}
+            ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/kustdesk-api:${{ env.LATEST_TAG }}-${{ matrix.job.platform }}
+            ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/kustdesk-api:${{ env.TAG }}-${{ matrix.job.platform }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Build and push Docker Full S6 image to GHCR ${{ matrix.job.platform }}
@@ -346,10 +348,9 @@ jobs:
           build-args: |
             BUILDARCH=${{ matrix.job.platform }}
           tags: |
-            ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/rustdesk-api:full-s6-${{ matrix.job.platform }}
+            ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/kustdesk-api:full-s6-${{ matrix.job.platform }}
           labels: ${{ steps.meta.outputs.labels }}
 
-  #
   docker-manifest:
     name: Push Docker Manifest
     needs: docker
@@ -366,14 +367,14 @@ jobs:
 
       - name: Log in to Docker Hub
         if: ${{ env.SKIP_DOCKER_HUB == 'false' }}  # Only log in if Docker Hub push is enabled
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+          password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Log in to GitHub Container Registry
         if: ${{ env.SKIP_GHCR == 'false' }}  # Only log in if GHCR push is enabled
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -383,20 +384,20 @@ jobs:
         if: ${{ env.SKIP_DOCKER_HUB == 'false' }}
         uses: Noelware/docker-manifest-action@v0.2.3
         with:
-          base-image: ${{ env.BASE_IMAGE_NAMESPACE }}/rustdesk-api:${{ env.TAG }}
-          extra-images: ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/rustdesk-api:${{ env.TAG }}-amd64,
-            ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/rustdesk-api:${{ env.TAG }}-armv7l,
-            ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/rustdesk-api:${{ env.TAG }}-arm64
+          base-image: ${{ env.BASE_IMAGE_NAMESPACE }}/kustdesk-api:${{ env.TAG }}
+          extra-images: ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/kustdesk-api:${{ env.TAG }}-amd64,
+            ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/kustdesk-api:${{ env.TAG }}-armv7l,
+            ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/kustdesk-api:${{ env.TAG }}-arm64
           push: true
 
       - name: Create and push manifest GHCR (:version)
         if: ${{ env.SKIP_GHCR == 'false' }}
         uses: Noelware/docker-manifest-action@v0.2.3
         with:
-          base-image: ghcr.io/${{ env.BASE_IMAGE_NAMESPACE }}/rustdesk-api:${{ env.TAG }}
-          extra-images: ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/rustdesk-api:${{ env.TAG }}-amd64,
-            ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/rustdesk-api:${{ env.TAG }}-armv7l,
-            ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/rustdesk-api:${{ env.TAG }}-arm64
+          base-image: ghcr.io/${{ env.BASE_IMAGE_NAMESPACE }}/kustdesk-api:${{ env.TAG }}
+          extra-images: ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/kustdesk-api:${{ env.TAG }}-amd64,
+            ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/kustdesk-api:${{ env.TAG }}-armv7l,
+            ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/kustdesk-api:${{ env.TAG }}-arm64
           push: true
           amend: true
 
@@ -404,20 +405,20 @@ jobs:
         if: ${{ env.SKIP_DOCKER_HUB == 'false' }}
         uses: Noelware/docker-manifest-action@v0.2.3
         with:
-          base-image: ${{ env.BASE_IMAGE_NAMESPACE }}/rustdesk-api:latest
-          extra-images: ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/rustdesk-api:latest-amd64,
-            ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/rustdesk-api:latest-armv7l,
-            ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/rustdesk-api:latest-arm64
+          base-image: ${{ env.BASE_IMAGE_NAMESPACE }}/kustdesk-api:latest
+          extra-images: ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/kustdesk-api:latest-amd64,
+            ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/kustdesk-api:latest-armv7l,
+            ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/kustdesk-api:latest-arm64
           push: true
 
       - name: Create and push manifest GHCR (:latest)
         if: ${{ env.SKIP_GHCR == 'false' }}
         uses: Noelware/docker-manifest-action@v0.2.3
         with:
-          base-image: ghcr.io/${{ env.BASE_IMAGE_NAMESPACE }}/rustdesk-api:latest
-          extra-images: ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/rustdesk-api:latest-amd64,
-            ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/rustdesk-api:latest-armv7l,
-            ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/rustdesk-api:latest-arm64
+          base-image: ghcr.io/${{ env.BASE_IMAGE_NAMESPACE }}/kustdesk-api:latest
+          extra-images: ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/kustdesk-api:latest-amd64,
+            ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/kustdesk-api:latest-armv7l,
+            ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/kustdesk-api:latest-arm64
           push: true
           amend: true
 
@@ -425,10 +426,10 @@ jobs:
         if: ${{ env.SKIP_DOCKER_HUB == 'false' }}
         uses: Noelware/docker-manifest-action@v0.2.3
         with:
-          base-image: ${{ env.BASE_IMAGE_NAMESPACE }}/rustdesk-api:full-s6
-          extra-images: ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/rustdesk-api:full-s6-amd64,
-            ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/rustdesk-api:full-s6-armv7l,
-            ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/rustdesk-api:full-s6-arm64
+          base-image: ${{ env.BASE_IMAGE_NAMESPACE }}/kustdesk-api:full-s6
+          extra-images: ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/kustdesk-api:full-s6-amd64,
+            ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/kustdesk-api:full-s6-armv7l,
+            ${{ env.DOCKERHUB_IMAGE_NAMESPACE }}/kustdesk-api:full-s6-arm64
           push: true
           amend: true
 
@@ -436,9 +437,9 @@ jobs:
         if: ${{ env.SKIP_GHCR == 'false' }}
         uses: Noelware/docker-manifest-action@v0.2.3
         with:
-          base-image: ghcr.io/${{ env.BASE_IMAGE_NAMESPACE }}/rustdesk-api:full-s6
-          extra-images: ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/rustdesk-api:full-s6-amd64,
-            ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/rustdesk-api:full-s6-armv7l,
-            ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/rustdesk-api:full-s6-arm64
+          base-image: ghcr.io/${{ env.BASE_IMAGE_NAMESPACE }}/kustdesk-api:full-s6
+          extra-images: ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/kustdesk-api:full-s6-amd64,
+            ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/kustdesk-api:full-s6-armv7l,
+            ghcr.io/${{ env.GHCR_IMAGE_NAMESPACE }}/kustdesk-api:full-s6-arm64
           push: true
           amend: true
