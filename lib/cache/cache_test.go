@@ -3,7 +3,6 @@ package cache
 import (
 	"fmt"
 	"github.com/go-redis/redis/v8"
-	"os"
 	"reflect"
 	"testing"
 )
