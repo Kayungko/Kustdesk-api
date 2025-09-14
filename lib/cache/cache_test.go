@@ -8,20 +8,6 @@ import (
 	"testing"
 )
 
-// getRedisAddr 获取Redis地址，支持环境变量配置
-func getRedisAddr() string {
-	host := os.Getenv("REDIS_HOST")
-	port := os.Getenv("REDIS_PORT")
-	
-	if host == "" {
-		host = "localhost"
-	}
-	if port == "" {
-		port = "6379"
-	}
-	
-	return host + ":" + port
-}
 
 func TestSimpleCache(t *testing.T) {
 
