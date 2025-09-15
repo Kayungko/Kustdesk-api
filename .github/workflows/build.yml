@@ -73,6 +73,7 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: '1.23'  # 选择 Go 版本
+          cache: false  # 禁用内置缓存，避免多架构构建中的缓存警告
 
       - name: Set up npm
         uses: actions/setup-node@v4
