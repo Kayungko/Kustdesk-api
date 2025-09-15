@@ -1,4 +1,4 @@
-FROM rustdesk/rustdesk-server-s6:latest AS server
+FROM kayung1012/kustdesk-server:latest AS server
 
 FROM alpine
 
