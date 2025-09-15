@@ -288,7 +288,7 @@ jobs:
       - name: Unzip binaries
         run: |
           mkdir -p ${{ matrix.job.platform }}
-          tar -xzf ${{ matrix.job.goos }}-${{ matrix.job.platform }}.tar.gz -C ${{ matrix.job.platform }}
+          tar -xzf ${{ matrix.job.goos }}-${{ matrix.job.platform }}.tar.gz -C ${{ matrix.job.platform }} --strip-components=1
 
       - name: Build and push Docker image to Docker Hub ${{ matrix.job.platform }}
         if: ${{ env.SKIP_DOCKER_HUB == 'false' }}  # Only run this step if SKIP_DOCKER_HUB is false
