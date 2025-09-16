@@ -96,6 +96,9 @@ func UserBind(rg *gin.RouterGroup) {
 		// 新增：设备管理相关路由
 		aRP.GET("/devices/:id", cont.GetUserDevices)      // 获取用户设备列表
 		aRP.POST("/forceLogoutDevice", cont.ForceLogoutDevice) // 强制下线设备
+		
+		// 新增：批量管理路由
+		aRP.POST("/batchDisableExpired", cont.BatchDisableExpiredAccounts) // 批量禁用过期账户
 	}
 }
 

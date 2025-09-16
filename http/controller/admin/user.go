@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/lejianwen/rustdesk-api/v2/global"
 	"github.com/lejianwen/rustdesk-api/v2/http/request/admin"
@@ -411,4 +412,29 @@ func (ct *User) ForceLogoutDevice(c *gin.Context) {
 	}
 	
 	response.Success(c, nil)
+}
+
+// BatchDisableExpiredAccounts 批量禁用过期账户
+// @Tags 用户
+// @Summary 批量禁用过期账户
+// @Description 检查并禁用所有已过期但仍处于启用状态的账户
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} response.Response{data=gin.H}
+// @Failure 500 {object} response.Response
+// @Router /admin/user/batchDisableExpired [post]
+// @Security token
+func (ct *User) BatchDisableExpiredAccounts(c *gin.Context) {
+	count, err := service.AllService.UserService.BatchDisableExpiredAccounts()
+	if err != nil {
+		response.Fail(c, 500, "批量禁用过期账户失败: "+err.Error())
+		return
+	}
+	
+	responseData := gin.H{
+		"disabled_count": count,
+		"message": fmt.Sprintf("成功禁用 %d 个过期账户", count),
+	}
+	
+	response.Success(c, responseData)
 }

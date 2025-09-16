@@ -20,6 +20,10 @@ type UserService struct {
 func (us *UserService) InfoById(id uint) *model.User {
 	u := &model.User{}
 	DB.Where("id = ?", id).First(u)
+	if u.Id != 0 {
+		// 检查并自动禁用过期账户
+		us.AutoDisableExpiredAccount(u)
+	}
 	return u
 }
 
@@ -27,6 +31,10 @@ func (us *UserService) InfoById(id uint) *model.User {
 func (us *UserService) InfoByUsername(un string) *model.User {
 	u := &model.User{}
 	DB.Where("username = ?", un).First(u)
+	if u.Id != 0 {
+		// 检查并自动禁用过期账户
+		us.AutoDisableExpiredAccount(u)
+	}
 	return u
 }
 
@@ -34,6 +42,10 @@ func (us *UserService) InfoByUsername(un string) *model.User {
 func (us *UserService) InfoByEmail(email string) *model.User {
 	u := &model.User{}
 	DB.Where("email = ?", email).First(u)
+	if u.Id != 0 {
+		// 检查并自动禁用过期账户
+		us.AutoDisableExpiredAccount(u)
+	}
 	return u
 }
 
@@ -133,6 +145,12 @@ func (us *UserService) List(page, pageSize uint, where func(tx *gorm.DB)) (res *
 	tx.Count(&res.Total)
 	tx.Scopes(Paginate(page, pageSize))
 	tx.Find(&res.Users)
+	
+	// 检查并自动禁用过期账户
+	for _, user := range res.Users {
+		us.AutoDisableExpiredAccount(user)
+	}
+	
 	return
 }
 
@@ -615,6 +633,69 @@ func (us *UserService) IsAccountActive(u *model.User) bool {
 	}
 	
 	return true
+}
+
+// 自动禁用过期账户
+func (us *UserService) AutoDisableExpiredAccount(u *model.User) bool {
+	// 如果账户已过期但状态仍为启用，自动禁用
+	if !us.IsAccountActive(u) && u.Status == model.COMMON_STATUS_ENABLE {
+		u.Status = model.COMMON_STATUS_DISABLED
+		err := DB.Model(u).Update("status", model.COMMON_STATUS_DISABLED).Error
+		if err != nil {
+			Logger.Errorf("Failed to auto-disable expired account %d: %v", u.Id, err)
+			return false
+		}
+		Logger.Infof("Auto-disabled expired account: %s (ID: %d)", u.Username, u.Id)
+		return true
+	}
+	return false
+}
+
+// 检查并更新用户的完整状态（包括时间有效性和账户状态）
+func (us *UserService) CheckAndUpdateUserStatus(u *model.User) bool {
+	// 自动禁用过期账户
+	us.AutoDisableExpiredAccount(u)
+	
+	// 返回用户是否可用（同时检查状态开关和时间有效性）
+	return us.CheckUserEnable(u) && us.IsAccountActive(u)
+}
+
+// 批量检查并禁用所有过期账户（用于定时任务）
+func (us *UserService) BatchDisableExpiredAccounts() (int, error) {
+	now := time.Now()
+	var expiredUsers []*model.User
+	
+	// 查找所有已过期但仍启用的账户
+	result := DB.Model(&model.User{}).
+		Where("status = ? AND account_end_time IS NOT NULL AND account_end_time < ?", 
+			model.COMMON_STATUS_ENABLE, now).
+		Find(&expiredUsers)
+	
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	
+	if len(expiredUsers) == 0 {
+		return 0, nil
+	}
+	
+	// 批量更新状态为禁用
+	var userIds []uint
+	for _, user := range expiredUsers {
+		userIds = append(userIds, user.Id)
+	}
+	
+	err := DB.Model(&model.User{}).
+		Where("id IN ?", userIds).
+		Update("status", model.COMMON_STATUS_DISABLED).Error
+	
+	if err != nil {
+		Logger.Errorf("Failed to batch disable expired accounts: %v", err)
+		return 0, err
+	}
+	
+	Logger.Infof("Batch disabled %d expired accounts", len(expiredUsers))
+	return len(expiredUsers), nil
 }
 
 // 更新设备最后活跃时间
