@@ -295,14 +295,26 @@ func (ct *User) MyOauth(c *gin.Context) {
 	response.Success(c, res)
 }
 
-// groupUsers
+// GroupUsers 获取用户分组信息
+// @Tags 用户
+// @Summary 获取用户分组信息
+// @Description 获取所有分组和用户的信息
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} response.Response{data=adResp.GroupUsersResponse}
+// @Failure 500 {object} response.Response
+// @Router /admin/user/groupUsers [get]
+// @Security token
 func (ct *User) GroupUsers(c *gin.Context) {
 	aG := service.AllService.GroupService.List(1, 999, nil)
 	aU := service.AllService.UserService.List(1, 9999, nil)
-	response.Success(c, gin.H{
-		"groups": aG.Groups,
-		"users":  aU.Users,
-	})
+	
+	responseData := adResp.GroupUsersResponse{
+		Groups: aG.Groups,
+		Users:  aU.Users,
+	}
+	
+	response.Success(c, responseData)
 }
 
 // Register
@@ -351,11 +363,11 @@ func (ct *User) Register(c *gin.Context) {
 // GetUserDevices 获取用户当前登录的所有设备
 // @Tags 用户
 // @Summary 获取用户设备列表
-// @Description 获取用户当前登录的所有设备信息
+// @Description 获取用户当前登录的所有设备信息和设备限制
 // @Accept  json
 // @Produce  json
 // @Param id path int true "用户ID"
-// @Success 200 {object} response.Response{data=[]model.UserToken}
+// @Success 200 {object} response.Response{data=adResp.UserDevicesResponse}
 // @Failure 500 {object} response.Response
 // @Router /admin/user/devices/{id} [get]
 // @Security token
@@ -374,13 +386,13 @@ func (ct *User) GetUserDevices(c *gin.Context) {
 	deviceLimit, isPersonal := service.AllService.UserService.GetUserDeviceLimit(uint(userIdUint))
 	
 	// 构建响应数据
-	responseData := gin.H{
-		"devices": devices,
-		"device_limit": gin.H{
-			"limit": deviceLimit,
-			"is_personal": isPersonal,
-			"current_count": len(devices),
-			"available_slots": deviceLimit - len(devices),
+	responseData := adResp.UserDevicesResponse{
+		Devices: devices,
+		DeviceLimit: adResp.DeviceLimitInfo{
+			Limit:          deviceLimit,
+			IsPersonal:     isPersonal,
+			CurrentCount:   len(devices),
+			AvailableSlots: deviceLimit - len(devices),
 		},
 	}
 	
@@ -420,7 +432,7 @@ func (ct *User) ForceLogoutDevice(c *gin.Context) {
 // @Description 检查并禁用所有已过期但仍处于启用状态的账户
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} response.Response{data=gin.H}
+// @Success 200 {object} response.Response{data=adResp.BatchDisableExpiredResponse}
 // @Failure 500 {object} response.Response
 // @Router /admin/user/batchDisableExpired [post]
 // @Security token
@@ -431,9 +443,9 @@ func (ct *User) BatchDisableExpiredAccounts(c *gin.Context) {
 		return
 	}
 	
-	responseData := gin.H{
-		"disabled_count": count,
-		"message": fmt.Sprintf("成功禁用 %d 个过期账户", count),
+	responseData := adResp.BatchDisableExpiredResponse{
+		DisabledCount: count,
+		Message:       fmt.Sprintf("成功禁用 %d 个过期账户", count),
 	}
 	
 	response.Success(c, responseData)
