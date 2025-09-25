@@ -25,8 +25,8 @@ type UserOauthItem struct {
 
 // GroupUsersResponse 用户分组响应
 type GroupUsersResponse struct {
-	Groups []model.Group `json:"groups"`
-	Users  []model.User  `json:"users"`
+	Groups []*model.Group `json:"groups"`
+	Users  []*model.User  `json:"users"`
 }
 
 // DeviceLimitInfo 设备限制信息
@@ -39,8 +39,8 @@ type DeviceLimitInfo struct {
 
 // UserDevicesResponse 用户设备响应
 type UserDevicesResponse struct {
-	Devices     []model.Peer    `json:"devices"`
-	DeviceLimit DeviceLimitInfo `json:"device_limit"`
+	Devices     []*model.UserToken `json:"devices"`
+	DeviceLimit DeviceLimitInfo    `json:"device_limit"`
 }
 
 // BatchDisableExpiredResponse 批量禁用过期账户响应
