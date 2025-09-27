@@ -124,7 +124,6 @@ func DecryptConfigCode(code, secretKey string) (*ClientServerConfig, error) {
 	// 解析配置码格式
 	// 提取加密数据部分（跳过前缀）
 	var encryptedPart string
-	var parts []string
 	
 	// 简单解析，实际可能需要更复杂的解析逻辑
 	if len(code) > 20 && code[:5] == "KUST-" {
