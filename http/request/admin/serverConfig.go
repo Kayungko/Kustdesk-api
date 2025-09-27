@@ -2,6 +2,7 @@ package admin
 
 import (
 	"time"
+	"github.com/lejianwen/rustdesk-api/v2/model"
 )
 
 // ServerConfigForm 服务器配置表单
@@ -20,7 +21,7 @@ type ServerConfigForm struct {
 
 // ServerConfigListQuery 服务器配置列表查询
 type ServerConfigListQuery struct {
-	Pagination
+	model.Pagination
 	Name      string `form:"name" label:"配置名称"`
 	Region    string `form:"region" label:"地域"`
 	IsEnabled *bool  `form:"is_enabled" label:"启用状态"`
@@ -36,7 +37,7 @@ type ConfigCodeForm struct {
 
 // ConfigCodeListQuery 配置码列表查询
 type ConfigCodeListQuery struct {
-	Pagination
+	model.Pagination
 	ServerConfigId uint   `form:"server_config_id" label:"服务器配置ID"`
 	Code           string `form:"code" label:"配置码"`
 	CreatedBy      uint   `form:"created_by" label:"创建者"`
