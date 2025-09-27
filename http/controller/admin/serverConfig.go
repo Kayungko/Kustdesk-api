@@ -2,6 +2,7 @@ package admin
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/lejianwen/rustdesk-api/v2/global"
@@ -62,12 +63,12 @@ func (ct *ServerConfig) List(c *gin.Context) {
 			ApiServer:   config.ApiServer,
 			Key:         config.Key,
 			IsEnabled:   config.IsEnabled != nil && *config.IsEnabled,
-			IsDefault:   config.IsDefault != nil && *config.IsDefault,
-			Priority:    config.Priority,
-			Status:      int(config.Status),
-			CreatedAt:   config.CreatedAt.Time,
-			UpdatedAt:   config.UpdatedAt.Time,
-		})
+		IsDefault:   config.IsDefault != nil && *config.IsDefault,
+		Priority:    config.Priority,
+		Status:      int(config.Status),
+		CreatedAt:   time.Time(config.CreatedAt),
+		UpdatedAt:   time.Time(config.UpdatedAt),
+	})
 	}
 
 	resp := adResp.ServerConfigListResponse{
@@ -116,8 +117,8 @@ func (ct *ServerConfig) Create(c *gin.Context) {
 		IsDefault:   config.IsDefault != nil && *config.IsDefault,
 		Priority:    config.Priority,
 		Status:      int(config.Status),
-		CreatedAt:   config.CreatedAt.Time,
-		UpdatedAt:   config.UpdatedAt.Time,
+		CreatedAt:   time.Time(config.CreatedAt),
+		UpdatedAt:   time.Time(config.UpdatedAt),
 	}
 
 	response.Success(c, resp)
@@ -170,8 +171,8 @@ func (ct *ServerConfig) Update(c *gin.Context) {
 		IsDefault:   config.IsDefault != nil && *config.IsDefault,
 		Priority:    config.Priority,
 		Status:      int(config.Status),
-		CreatedAt:   config.CreatedAt.Time,
-		UpdatedAt:   config.UpdatedAt.Time,
+		CreatedAt:   time.Time(config.CreatedAt),
+		UpdatedAt:   time.Time(config.UpdatedAt),
 	}
 
 	response.Success(c, resp)
@@ -246,8 +247,8 @@ func (ct *ServerConfig) Detail(c *gin.Context) {
 		IsDefault:   config.IsDefault != nil && *config.IsDefault,
 		Priority:    config.Priority,
 		Status:      int(config.Status),
-		CreatedAt:   config.CreatedAt.Time,
-		UpdatedAt:   config.UpdatedAt.Time,
+		CreatedAt:   time.Time(config.CreatedAt),
+		UpdatedAt:   time.Time(config.UpdatedAt),
 	}
 
 	response.Success(c, resp)
@@ -422,8 +423,8 @@ func (ct *ServerConfig) ConfigCodeList(c *gin.Context) {
 			MaxUsage:       code.MaxUsage,
 			CreatedBy:      code.CreatedBy,
 			Status:         int(code.Status),
-			CreatedAt:      code.CreatedAt.Time,
-			UpdatedAt:      code.UpdatedAt.Time,
+			CreatedAt:      time.Time(code.CreatedAt),
+			UpdatedAt:      time.Time(code.UpdatedAt),
 		}
 
 		// 添加服务器配置信息
