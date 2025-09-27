@@ -46,6 +46,7 @@ func Init(g *gin.Engine) {
 	//deprecated end
 
 	ShareRecordBind(adg)
+	ServerConfigBind(adg)
 	MyBind(adg)
 
 	RustdeskCmdBind(adg)
@@ -341,5 +342,30 @@ func SystemBind(rg *gin.RouterGroup) {
 		aR.GET("/status", cont.GetStatus)
 		aR.GET("/statistics/users", cont.GetUserStatistics)
 		aR.GET("/statistics/devices", cont.GetDeviceStatistics)
+	}
+}
+
+func ServerConfigBind(rg *gin.RouterGroup) {
+	// 服务器配置管理 - 需要管理员权限
+	aR := rg.Group("/server-config").Use(middleware.AdminPrivilege())
+	{
+		cont := &admin.ServerConfig{}
+		aR.GET("/list", cont.List)
+		aR.GET("/detail/:id", cont.Detail)
+		aR.POST("/create", cont.Create)
+		aR.PUT("/update/:id", cont.Update)
+		aR.DELETE("/delete/:id", cont.Delete)
+		aR.POST("/set-default", cont.SetDefault)
+	}
+
+	// 配置码管理 - 需要管理员权限
+	cR := rg.Group("/config-code").Use(middleware.AdminPrivilege())
+	{
+		cont := &admin.ServerConfig{}
+		cR.GET("/list", cont.ConfigCodeList)
+		cR.POST("/generate", cont.GenerateConfigCode)
+		cR.POST("/batch-generate", cont.BatchGenerateConfigCode)
+		cR.DELETE("/delete/:id", cont.DeleteConfigCode)
+		cR.GET("/stats", cont.GetConfigCodeStats)
 	}
 }

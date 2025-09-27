@@ -100,6 +100,7 @@ func ApiInit(g *gin.Engine) {
 	}
 
 	PersonalRoutes(frg)
+	ServerConfigRoutes(frg)
 	//访问静态文件
 	g.StaticFS("/upload", http.Dir(global.Config.Gin.ResourcesPath+"/public/upload"))
 }
@@ -145,4 +146,13 @@ func WebClientRoutes(frg *gin.RouterGroup) {
 		frg.POST("/server-config-v2", middleware.RustAuth(), w.ServerConfigV2)
 	}
 
+}
+
+func ServerConfigRoutes(frg *gin.RouterGroup) {
+	sc := &api.ServerConfig{}
+	{
+		// 客户端获取配置 - 无需认证
+		frg.GET("/config/:code", sc.GetConfigByCode)
+		frg.GET("/config/:code/validate", sc.ValidateConfigCode)
+	}
 }

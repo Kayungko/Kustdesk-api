@@ -334,6 +334,9 @@ func Migrate(version uint) {
 		&model.AddressBookCollectionRule{},
 		&model.ServerCmd{},
 		&model.DeviceGroup{},
+		&model.ServerConfig{},
+		&model.ConfigCode{},
+		&model.ConfigCodeUsage{},
 	)
 	if err != nil {
 		global.Logger.Error("migrate err :=>", err)
